@@ -1,0 +1,2 @@
+# wahbot
+private discord bot
