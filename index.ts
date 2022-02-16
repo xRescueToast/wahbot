@@ -1,4 +1,4 @@
-import DiscordJS, { Intents, Message } from 'discord.js'
+import DiscordJS, { Intents, Message, VoiceChannel } from 'discord.js'
 import dotenv from 'dotenv'
 dotenv.config()
 const fs = require('fs')
@@ -10,13 +10,16 @@ fs.readFile('counter.txt', 'utf8' , (err: any, data: String) => {
     }
     wahcounter = Number(data)
   })
-  
+
 const client = new DiscordJS.Client({
     intents: [
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES,
     ]
 })
+
+    const guildID = '943285541561041017'
+    const guild = client.guilds.cache.get(guildID)
 
 
 client.on('ready', () => {
@@ -70,29 +73,43 @@ client.on('interactionCreate', async (interaction) => {
 })
 
 client.on('messageCreate', (message) => {
-    
-    if (message.content === 'wah'){
-        wahcounter = wahcounter + 1
-        //message.reply({
-        //    content:  message.author + ' said wah! wah counter:' + wahcounter
-        //})
-        message.channel.send(message.author.toString() + ' said wah, wah counter: ' + wahcounter)
-        fs.writeFile('counter.txt', String(wahcounter), (err: any) => {
-      
-            // In case of a error throw err.
-            if (err) throw err;
-        })
+
+    if(message.channel.type == "DM"){
+        return
     }
-    if(message.content === 'purge'){
-        if(message.member && message.member.roles.cache.some(role => role.name === 'wah')){
-            if(message.channel.type == "DM"){
-                return
+    if(message.author.bot){
+        return
+    }
+    else{
+        var split = message.content.split(" ")
+        if(message.content.startsWith("!")){
+            if(split[0] === '!purge'){
+                if(message.member && message.member.roles.cache.some(role => role.name === 'wah')){
+                    var amount = Number(split[1])
+                    message.channel.bulkDelete(amount + 1)
+                }
             }
-            if(message.author.bot){
-                return
+            if(split[0] === 'banish'){
+                //var mmbr = (message.mentions.users.first())
+                //guild.member(id).voice.setChannel("channelID");
+    
+                //message.channel.send(":right_facing_fist: " + mmbr)
             }
-            else{
-                message.channel.bulkDelete(20)
+
+        }
+    
+        else{
+                if(message.content.toLowerCase().includes('wah')){
+                wahcounter = wahcounter + 1
+                //message.reply({
+                //    content:  message.author + ' said wah! wah counter:' + wahcounter
+                //})
+                message.channel.send(message.author.toString() + ' said wah, wah counter: ' + wahcounter)
+                fs.writeFile('counter.txt', String(wahcounter), (err: any) => {
+            
+                    // In case of a error throw err.
+                    if (err) throw err;
+                })
             }
         }
     }
