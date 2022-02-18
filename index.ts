@@ -3,6 +3,7 @@ import { MembershipStates } from 'discord.js/typings/enums';
 import DisTube, { Options, Queue, Song } from 'distube';
 import dotenv from 'dotenv'
 import fetch from 'node-fetch';
+import { isElementAccessExpression } from 'typescript';
 dotenv.config()
 const fs = require('fs')
 var wahcounter = 0
@@ -22,9 +23,10 @@ const client = new DiscordJS.Client({
         Intents.FLAGS.GUILD_VOICE_STATES
     ]
 })
-const distube = new DisTube(client, {searchSongs: 0, emitNewSongOnly: true})
+const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true})
 const guildID = '943285541561041017'
 const guild = client.guilds.cache.get(guildID)
+
 
 
 
@@ -224,17 +226,100 @@ async function skip(message: any){
 
 async function queue(message: any){
     const queue = distube.getQueue(message)
+    var qArr = new Array
     if(queue != undefined){
-        message.channel.send('Current queue:\n' + queue.songs.map((song, id) => `**${id+1}**. \`${song.name}\` (<${song.url}>) - \`${song.formattedDuration}\``).join("\n"));
+
+        message.channel.send(
+            `current queue:\n${queue.songs
+                .map(
+                    (song, id) =>
+                        `**${id ? id : 'Playing: '}** \`${
+                            song.name
+                        }\` - \`${song.formattedDuration}\``,
+                )
+                .slice(0, 11)
+                .join('\n')}`,)
+        
     }
     else{
         message.channel.send(message.author.toString() + ' there is no queue!')
     }
 }
 
-distube.on("playSong", (queue, song) => queue.textChannel?.send(`now playing song:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
-.on("addSong", (queue, song) => queue.textChannel?.send(`added song to queue:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
-.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
+
+//distube.on("searchResult", (message, result) => printresult(message, result))
+//distube.on("searchCancel", () => {})
+//distube.on("searchInvalidAnswer", () => {})
+//distube.on("searchDone", (message, answer, query) => {message.channel.send(query)})
+//distube.on("playSong", (queue, song) => queue.textChannel?.send(`now playing song:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
+//distube.on("addSong", (queue, song) => queue.textChannel?.send(`added song to queue:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
+//distube.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
+//distube.on("error", (channel, error) => channel.send('there has been an error, please tr again'))
+
+distube
+    .on('playSong', (queue, song) =>
+        queue.textChannel?.send(
+            `playing \`${song.name}\` - \`${
+                song.formattedDuration
+            }\`\nrequested by: ${song.user}\n`,
+        ),
+    )
+    .on('addSong', (queue, song) =>
+        queue.textChannel?.send(
+            `added \`${song.name}\` - \`${song.formattedDuration}\` to the queue by ${song.user}`,
+        ),
+    )
+    .on('addList', (queue, playlist) =>
+        queue.textChannel?.send(
+            `added \`${playlist.name}\` playlist (${
+                playlist.songs.length
+            } songs) to queue\n`,
+        ),
+    )
+    .on('error', (textChannel, e) => {
+        console.error(e)
+        textChannel.send(
+            `an error encountered: ${e.message.slice(0, 2000)}`,
+        )
+    })
+    .on('finish', queue => queue.textChannel?.send(`no more songs`))
+    .on('finishSong', queue =>
+        queue.textChannel?.send(`song finished`),
+    )
+    .on('disconnect', queue =>
+        queue.textChannel?.send(`disconnected!`),
+    )
+    .on('empty', queue =>
+        queue.textChannel?.send(
+            `the voice channel was empty :(`,
+        ),
+    )
+    // DisTubeOptions.searchSongs > 1
+    .on('searchResult', (message, result) => {
+        let i = 0
+        message.channel.send(
+            `**choose an option from below**\n${result
+                .map(
+                    song =>
+                        `**${++i}**. \`${song.name}\` - \`${
+                            song.formattedDuration
+                        }\``,
+                )
+                .join(
+                    '\n',
+                )}\n*enter a number from above or wait 30 seconds*`,
+        )
+    })
+    .on('searchCancel', message =>
+        message.channel.send('Searching canceled'),
+    )
+    .on('searchInvalidAnswer', message =>
+        message.channel.send('that is not a valid option, please try again'),
+    )
+    .on('searchNoResult', message =>
+        message.channel.send('no result found :c'),
+    )
+    .on('searchDone', () => {})
 
 
 
