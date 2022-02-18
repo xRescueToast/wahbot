@@ -90,6 +90,7 @@ client.on('messageCreate', async (message) => {
         return
     }
     else{
+        var queue = distube.getQueue
         var split = message.content.split(" ")
         if(message.content.startsWith("!")){
             if(split[0] === '!purge'){
@@ -103,26 +104,33 @@ client.on('messageCreate', async (message) => {
                 for(var x = 1; x < split.length; x++){
                     music += split[x]
                 }
-                inVoiceChannel: true
-                if(message.member && message.member.voice.channel){
-                    distube.play(message.member.voice?.channel, music, {
-                        member: message.member,
-                        textChannel: message.channel,
-                        message
-                    });
-                    //console.log(distube.getQueue(message))
+                if(music != ""){
+                    inVoiceChannel: true
+                    if(message.member && message.member.voice.channel){
+                        distube.play(message.member.voice?.channel, music, {
+                            member: message.member,
+                            textChannel: message.channel,
+                            message
+                        });
+                        //console.log(distube.getQueue(message))
+                        //distube.on("")
+        
 
-                    if(distube.getQueue(message) == undefined){
-                        distube.on("playSong", (queue, song) => message.channel.send(`playing song:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
+                        if(distube.getQueue(message) === undefined){
+                            distube.on("playSong", (queue, song) => message.channel.send(`now playing song:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
+                        }
+                        else{
+                            distube.once("addSong", (queue, song) => message.channel.send(`added song to queue:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
+                        }
                     }
                     else{
-                        distube.on("addSong", (queue, song) => message.channel.send(`added song to queue:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
-
+                        message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command')
                     }
                 }
                 else{
-                    message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command')
+                    message.channel.send(message.author.toString() + ' you need to enter a name of a song!')
                 }
+                
             }
             if(split[0] === '!stop'){
                 if(distube.getQueue(message) != undefined){
@@ -142,7 +150,7 @@ client.on('messageCreate', async (message) => {
                     message.channel.send(message.author.toString() + ' there is no queue!')
                 }
             }
-            if(split[0] === 'skip'){
+            if(split[0] === '!skip'){
                 if(message.member && message.member.voice.channel){
                     distube.skip(message)
                 }
