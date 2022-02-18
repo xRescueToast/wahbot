@@ -1,6 +1,6 @@
 import DiscordJS, { Intents, Message, SystemChannelFlags, VoiceChannel } from 'discord.js'
 import { MembershipStates } from 'discord.js/typings/enums';
-import DisTube, { Queue, Song } from 'distube';
+import DisTube, { Options, Queue, Song } from 'distube';
 import dotenv from 'dotenv'
 import fetch from 'node-fetch';
 dotenv.config()
@@ -25,6 +25,7 @@ const client = new DiscordJS.Client({
 const distube = new DisTube(client, {searchSongs: 0, emitNewSongOnly: true})
 const guildID = '943285541561041017'
 const guild = client.guilds.cache.get(guildID)
+
 
 
 client.on('ready', () => {
@@ -82,7 +83,7 @@ client.on('interactionCreate', async (interaction) => {
     }
 })
 
-client.on('messageCreate', async (message) => {
+client.on('messageCreate', (message) => {
     if(message.channel.type == "DM"){
         return
     }
@@ -90,88 +91,42 @@ client.on('messageCreate', async (message) => {
         return
     }
     else{
-        var queue = distube.getQueue
         var split = message.content.split(" ")
         if(message.content.startsWith("!")){
             if(split[0] === '!purge'){
                 if(message.member && message.member.roles.cache.some(role => role.name === 'wah')){
-                    var amount = await Number(split[1])
+                    var amount = Number(split[1])
                     message.channel.bulkDelete(amount + 1)
                 }
             }
-            if(split[0] === '!play'){
+
+            if(split[0] === '!play' || split[0] === '!p'){
                 var music = ""
                 for(var x = 1; x < split.length; x++){
                     music += split[x]
                 }
                 if(music != ""){
-                    inVoiceChannel: true
-                    if(message.member && message.member.voice.channel){
-                        distube.play(message.member.voice?.channel, music, {
-                            member: message.member,
-                            textChannel: message.channel,
-                            message
-                        });
-                        //console.log(distube.getQueue(message))
-                        //distube.on("")
-        
+                    play(message, music)
+                }
+                else{
+                    message.channel.send(message.author.toString() + ' you need to enter the name of a song!')
+                }
+            }
 
-                        if(distube.getQueue(message) === undefined){
-                            distube.on("playSong", (queue, song) => message.channel.send(`now playing song:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
-                        }
-                        else{
-                            distube.once("addSong", (queue, song) => message.channel.send(`added song to queue:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
-                        }
-                    }
-                    else{
-                        message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command')
-                    }
-                }
-                else{
-                    message.channel.send(message.author.toString() + ' you need to enter a name of a song!')
-                }
-                
-            }
+
             if(split[0] === '!stop'){
-                if(distube.getQueue(message) != undefined){
-                    distube.stop(message)
-                    message.channel.send(message.author.toString() + ' has requested the song to stop')
-                }
-                else{
-                    message.channel.send(message.author.toString() + ' there is no music playing :c')
-                }
+                stop(message)
             }
+
             if(split[0] === '!queue' || split [0] === '!q'){
-                const queue = distube.getQueue(message)
-                if(queue != undefined){
-                    message.channel.send('Current queue:\n' + queue.songs.map((song, id) => `**${id+1}**. \`${song.name}\` (<${song.url}>) - \`${song.formattedDuration}\``).join("\n"));
-                }
-                else{
-                    message.channel.send(message.author.toString() + ' there is no queue!')
-                }
+                queue(message)
             }
             if(split[0] === '!skip'){
-                if(message.member && message.member.voice.channel){
-                    distube.skip(message)
-                }
-                else{
-                    message.channel.send(message.author.toString() + ' you must be in the vc to skip a song!')
-                }
+                skip(message)
             }
 
             if(split[0] === '!foob'){
-                if(message.member && message.member.id.toString() == '264583320275386369'){
-                    message.channel.send(message.author.toString() + ' since kywa is so cute this meal is on the house! :heart:')
-                }
-                else{
-                    message.channel.send(message.author.toString() + ' here is some food for you to eat')
-                }
-                const response = await fetch('https://foodish-api.herokuapp.com/api/')
-                const data = await response.json()
-                //console.log(data);
-                var image = data.image;
-                //console.log(image)
-                message.channel.send(image)
+                foob(message)
             }
 
         }
@@ -190,17 +145,97 @@ client.on('messageCreate', async (message) => {
                 })
             }
             if(message.content.toLowerCase().includes('bunger')){
-                message.channel.send(message.author.toString() + ' here is a bunger for you :D')
+                bunger(message)
+            }
+        }
+
+    }
+})
+
+async function play(message: any, music: any){
+    try{
+        inVoiceChannel: true
+        var found = await distube.search(music);
+        var length = found.length
+        console.log(length)
+        if(message.member && message.member.voice.channel){
+            distube.play(message.member.voice?.channel, music, {
+                member: message.member,
+                textChannel: message.channel,
+                message
+            });
+        }
+        else{
+            message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command')
+        }
+    }
+    catch(err){
+        message.channel.send(message.author.toString() + ' no song found, try again!')
+        //distube.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
+    }
+
+}
+
+async function foob(message: any){
+    if(message.member && message.member.id.toString() == '264583320275386369'){
+        message.channel.send(message.author.toString() + ' since kywa is so cute this meal is on the house! :heart:')
+    }
+    else{
+        message.channel.send(message.author.toString() + ' here is some food for you to eat')
+    }
+    const response = await fetch('https://foodish-api.herokuapp.com/api/')
+    const data = await response.json()
+    //console.log(data);
+    var image = data.image;
+    //console.log(image)
+    message.channel.send(image)
+}
+
+async function bunger(message: any){
+    message.channel.send(message.author.toString() + ' here is a bunger for you :D')
                 const response = await fetch('https://foodish-api.herokuapp.com/api/images/burger')
                 const data = await response.json()
                 //console.log(data);
                 var image = data.image;
                 //console.log(image)
                 message.channel.send(image)
-            }
-        }
+}
+   
+async function stop(message: any){
+    if(distube.getQueue(message) != undefined){
+        distube.stop(message)
+        message.channel.send(message.author.toString() + ' has requested the song to stop')
     }
-})
+    else{
+        message.channel.send(message.author.toString() + ' there is no music playing :c')
+    }
+}
+
+async function skip(message: any){
+    var queue = distube.getQueue(message)
+    if(queue != undefined){
+        if (!queue.autoplay && queue.songs.length <= 1){
+            message.channel.send(message.author.toString() + ' there is no next song :(')
+            return
+        }
+        distube.skip(message)
+    }
+}
+
+async function queue(message: any){
+    const queue = distube.getQueue(message)
+    if(queue != undefined){
+        message.channel.send('Current queue:\n' + queue.songs.map((song, id) => `**${id+1}**. \`${song.name}\` (<${song.url}>) - \`${song.formattedDuration}\``).join("\n"));
+    }
+    else{
+        message.channel.send(message.author.toString() + ' there is no queue!')
+    }
+}
+
+distube.on("playSong", (queue, song) => queue.textChannel?.send(`now playing song:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
+.on("addSong", (queue, song) => queue.textChannel?.send(`added song to queue:  \`${song.name}\` - \`(${song.formattedDuration})\`\nrequested by: ${song.user}`))
+.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
+
 
 
 
