@@ -20,6 +20,8 @@
   "homepage": "https://github.com/xRescueToast/wahbot#readme",
   "dependencies": {
     "@discordjs/opus": "^0.7.0",
+    "@distube/spotify": "^1.2.1",
+    "@distube/yt-dlp": "^1.0.2",
     "discord.js": "^13.6.0",
     "distube": "^3.3.2",
     "dotenv": "^16.0.0",

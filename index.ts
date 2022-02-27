@@ -4,6 +4,8 @@ import DisTube, { Options, Queue, Song } from 'distube';
 import dotenv from 'dotenv'
 import fetch from 'node-fetch';
 import { isElementAccessExpression } from 'typescript';
+const { YtDlpPlugin } = require("@distube/yt-dlp")
+const { SpotifyPlugin } = require("@distube/spotify");
 dotenv.config()
 const fs = require('fs')
 var wahcounter = 0
@@ -23,9 +25,11 @@ const client = new DiscordJS.Client({
         Intents.FLAGS.GUILD_VOICE_STATES
     ]
 })
-const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true})
+//const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false})
+const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false, plugins: [new YtDlpPlugin(), new SpotifyPlugin()] })
 const guildID = '943285541561041017'
 const guild = client.guilds.cache.get(guildID)
+distube.options.youtubeDL = false
 
 
 
