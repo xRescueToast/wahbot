@@ -1,6 +1,6 @@
 import DiscordJS, { Intents, Message, SystemChannelFlags, VoiceChannel } from 'discord.js'
-import { MembershipStates } from 'discord.js/typings/enums';
-import DisTube, { Options, Queue, Song } from 'distube';
+import { ExplicitContentFilterLevels, MembershipStates } from 'discord.js/typings/enums';
+import DisTube, { DisTubeVoice, Options, Queue, Song } from 'distube';
 import dotenv from 'dotenv'
 import fetch from 'node-fetch';
 import { isElementAccessExpression } from 'typescript';
@@ -30,6 +30,7 @@ const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, yout
 const guildID = '943285541561041017'
 const guild = client.guilds.cache.get(guildID)
 distube.options.youtubeDL = false
+distube.options.leaveOnFinish = true
 
 
 
@@ -123,16 +124,41 @@ client.on('messageCreate', (message) => {
             if(split[0] === '!stop'){
                 stop(message)
             }
-
             if(split[0] === '!queue' || split [0] === '!q'){
                 queue(message)
             }
             if(split[0] === '!skip'){
                 skip(message)
             }
+            if(split[0] === '!pause'){
+                pause(message)
+            }
+            if(split[0] === '!resume'){
+                resume(message)
+            }
+            if(split[0] === '!autoplay'){
+                autoplay(message)
+            }
+            if(split[0] === '!filter'){
+                if(split.length == 2){
+                    filter(message, split[1])
+                }
+                else{
+                    message.channel.send(message.author.toString() + ' invalid format')
+                }
+            }
 
             if(split[0] === '!foob'){
                 foob(message)
+            }
+
+            if(split[0] === '!img'){
+                if(split.length == 2){
+                    imgGet(message, split[1])
+                }
+                else{
+                    message.channel.send(message.author.toString() + ' invalid format')
+                }
             }
 
         }
@@ -172,7 +198,7 @@ async function play(message: any, music: any){
             });
         }
         else{
-            message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command')
+            message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
         }
     }
     catch(err){
@@ -180,6 +206,111 @@ async function play(message: any, music: any){
         //distube.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
     }
 
+}
+
+async function imgGet(message: any, tag: any){
+    if(tag == "list"){
+        message.channel.send('**available tags:**\n'
+                + '*IMAGE:*\n'
+                + '`kitsune, '
+                + 'neko, '
+                + 'waifu.`\n'
+                + '*GIF:*\n'
+                + '`baka, '
+                + 'bite, '
+                + 'blush, '
+                + 'bored, '
+                + 'cry, '
+                + 'cuddle, '
+                + 'dance, '
+                + 'facepalm, '
+                + 'feed, '
+                + 'happy, '
+                + 'highfive, '
+                + 'hug, '
+                + 'kiss, '
+                + 'laugh, '
+                + 'pat, '
+                + 'poke, '
+                + 'pout, '
+                + 'shrug, '
+                + 'slap, '
+                + 'sleep, '
+                + 'smile, '
+                + 'smug, '
+                + 'stare, '
+                + 'think, '
+                + 'thumbsup, '
+                + 'tickle, '
+                + 'wave, '
+                + 'wink.`'
+            )
+    }
+    else{
+        const response = await fetch('https://nekos.best/api/v2/' + tag)
+        const data = await response.json()
+        //console.log(data)
+        //console.log(data.results[0].url)
+        if(data.code == 404){
+            message.channel.send(message.author.toString() + ' enter a valid tag please (try !img list)')
+        }
+        else{
+            message.channel.send(data.results[0].url)
+            if(tag == 'kitsune' || tag == 'neko' || tag == 'waifu'){
+                message.channel.send('by ' + data.results[0].artist_name)
+            }
+        }
+        
+        
+    }
+}
+
+async function filter(message: any, filter: any){
+    if(message.member && message.member.voice.channel){
+        var queue = distube.getQueue(message);
+        if(filter == "list"){
+            message.channel.send('**available filters:**\n'
+                + '`3d\n'
+                + 'bassboost\n'
+                + 'echo\n'
+                + 'karaoke\n'
+                + 'nightcore\n'
+                + 'vaporwave\n'
+                + 'flanger\n'
+                + 'gate\n'
+                + 'haas\n'
+                + 'reverse\n'
+                + 'surround\n'
+                + 'mcompand\n'
+                + 'phaser\n'
+                + 'tremolo\n'
+                + 'earwax\n`'
+                + '**warning: ** filters may cause your queue to crash and force you to requeue songs.'
+            )
+        }
+        else{
+            if(queue != undefined){
+                try{
+                    if(filter == "disable"){
+                        distube.setFilter(queue, false)
+                        message.channel.send("filters disabled");
+                    }
+                    else{
+                        message.channel.send("Current queue filter: " + distube.setFilter(queue, filter));
+                    }
+                }
+                catch(err){
+                    message.channel.send(message.author.toString() + ' filter error ' + err)
+                }
+            }
+            else{
+                message.channel.send(message.author.toString() + ' nothing to filter :sob:')
+            }
+        }
+    }
+    else{
+        message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
+    }
 }
 
 async function foob(message: any){
@@ -208,12 +339,81 @@ async function bunger(message: any){
 }
    
 async function stop(message: any){
-    if(distube.getQueue(message) != undefined){
-        distube.stop(message)
-        message.channel.send(message.author.toString() + ' has requested the song to stop')
+    if(message.member && message.member.voice.channel){
+        if(distube.getQueue(message) != undefined){
+            distube.stop(message)
+            message.channel.send(message.author.toString() + ' has requested the song to stop')
+        }
+        else{
+            message.channel.send(message.author.toString() + ' there is no music playing :c')
+        }
+    
     }
     else{
-        message.channel.send(message.author.toString() + ' there is no music playing :c')
+        message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
+    }
+}
+
+async function pause(message: any){
+    if(message.member && message.member.voice.channel){
+        var queue = distube.getQueue(message);
+        if(queue != undefined){
+            try{
+                distube.pause(queue);
+                message.channel.send(message.author.toString() + ' music paused :D')
+            }
+            catch(err){
+                message.channel.send(message.author.toString() + ' the song is already paused!')
+            }
+        }
+        else{
+            message.channel.send(message.author.toString() + ' nothing to pause :c')
+        }
+    }
+    else{
+        message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
+    }
+}
+
+async function autoplay(message: any){
+    if(message.member && message.member.voice.channel){
+        var queue = distube.getQueue(message);
+        if(queue != undefined){
+            try{
+                //distube.toggleAutoplay(queue);
+                message.channel.send(message.author.toString() + ' autoplay set to ' + distube.toggleAutoplay(queue))
+            }
+            catch(err){
+                message.channel.send(message.author.toString() + ' problem setting queue to autoplay + ' + err)
+            }
+        }
+        else{
+            message.channel.send(message.author.toString() + ' nothing to base autoplay off of')
+        }
+    }
+    else{
+        message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
+    }
+}
+
+async function resume(message: any){
+    if(message.member && message.member.voice.channel){
+        var queue = distube.getQueue(message);
+        if(queue != undefined){
+            try{
+                distube.resume(queue);
+                message.channel.send(message.author.toString() + ' music resumed :D')
+            }
+            catch(err){
+                message.channel.send(message.author.toString() + ' the song is already resumed!')
+            }
+        }
+        else{
+            message.channel.send(message.author.toString() + ' nothing to resume D:')
+        }
+    }
+    else{
+        message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
     }
 }
 
