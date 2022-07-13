@@ -26,10 +26,10 @@ const client = new DiscordJS.Client({
     ]
 })
 //const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false})
-const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false, plugins: [new YtDlpPlugin(), new SpotifyPlugin()] })
+const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: true, plugins: [new YtDlpPlugin(), new SpotifyPlugin()] })
 const guildID = '943285541561041017'
 const guild = client.guilds.cache.get(guildID)
-distube.options.youtubeDL = false
+distube.options.youtubeDL = true
 distube.options.leaveOnFinish = true
 
 
