@@ -9,6 +9,7 @@ const { SpotifyPlugin } = require("@distube/spotify");
 dotenv.config()
 const fs = require('fs')
 var wahcounter = 0
+const Discord = require('discord.js')
 
 fs.readFile('counter.txt', 'utf8' , (err: any, data: String) => {
     if (err) {
@@ -92,6 +93,7 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('messageCreate', (message) => {
     if(message.channel.type == "DM"){
+        message.channel.send("you smell bad :D")
         return
     }
     if(message.author.bot){
@@ -161,6 +163,10 @@ client.on('messageCreate', (message) => {
                 }
             }
 
+            if(split[0] == '!poll'){
+                makePoll(message)
+            }
+
         }
     
         else{
@@ -183,6 +189,20 @@ client.on('messageCreate', (message) => {
 
     }
 })
+
+async function makePoll(message: any){
+    var args = message.content.split(" ")
+    let pollChannel = message.mentions.channels.first()
+    let pollDescritption = args[2]
+
+    let embedPoll = new Discord.MessageEmbed()
+    .setTitle('New Poll')
+    .setDescription(pollDescritption)
+    .setColor('LUMINOUS_VIVID_PINK')
+    let msgEmbed = await pollChannel.send({ embeds: [embedPoll] })
+    await msgEmbed.react('👍')
+    await msgEmbed.react('👎')
+}
 
 async function play(message: any, music: any){
     try{
