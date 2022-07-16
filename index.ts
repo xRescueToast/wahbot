@@ -193,7 +193,10 @@ client.on('messageCreate', (message) => {
 async function makePoll(message: any){
     var args = message.content.split(" ")
     let pollChannel = message.mentions.channels.first()
-    let pollDescritption = args[2]
+    var pollDescritption = ''
+    for(var x = 2; x < args.length; x++){
+        pollDescritption = pollDescritption + args[x] + " "
+    }
 
     let embedPoll = new Discord.MessageEmbed()
     .setTitle('New Poll')
