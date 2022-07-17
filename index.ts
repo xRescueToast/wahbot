@@ -93,7 +93,7 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('messageCreate', (message) => {
     if(message.channel.type == "DM"){
-        message.channel.send("you smell bad :D")
+        message.reply("you smell bad :D")
         return
     }
     if(message.author.bot){
