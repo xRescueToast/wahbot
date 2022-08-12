@@ -172,9 +172,13 @@ client.on('messageCreate', (message) => {
                 makePoll(message)
             }
             
-            if(split[0] == '!rolesetup'){
-                setupRoles(message)
+            if(split[0] == '!rolesetuppronoun'){
+                setupRolesPronoun(message)
             }
+            if(split[0] == '!rolesetupgames'){
+                setupRolesGame(message)
+            }
+
 
         }
     
@@ -240,7 +244,7 @@ async function play(message: any, music: any){
 
 }
 
-async function setupRoles(message: any){
+async function setupRolesPronoun(message: any){
     
     const channel = '1007474646901330030';
     const sheher = message.guild.roles.cache.find((role: { name: string; }) => role.name == "She/Her")
@@ -340,6 +344,88 @@ async function setupRoles(message: any){
             return
         }
     })
+
+}
+
+
+async function setupRolesGame(message: any){
+    
+    const channel = '1007474646901330030';
+    const valorant = message.guild.roles.cache.find((role: { name: string; }) => role.name == "valorant")
+    const overwatch = message.guild.roles.cache.find((role: { name: string; }) => role.name == "overwatch")
+    const minecraft = message.guild.roles.cache.find((role: { name: string; }) => role.name == "minecraft")
+
+    //emoji :D
+    const valorantEmoji = '🔴'
+    const overwatchEmoji = '🟠'
+    const minecraftEmoji = '🟢'
+
+    //embeds
+    let embedRoleBoard = new Discord.MessageEmbed()
+    .setTitle('Select games for LFG')
+    .setDescription('\n'
+        + `${valorantEmoji} for Valorant\n`
+        + `${overwatchEmoji} for Overwatch\n`
+        + `${minecraftEmoji} for Minecraft\n`)
+    .setColor('LUMINOUS_VIVID_PINK')
+
+    let msgEmbed = await message.channel.send({ embeds: [embedRoleBoard] })
+    msgEmbed.react(valorantEmoji)
+    msgEmbed.react(overwatchEmoji)
+    msgEmbed.react(minecraftEmoji)
+
+
+    //get reactions for adding role
+    client.on('messageReactionAdd', async (reaction, user) => {
+        if(reaction.message.partial) await reaction.message.fetch()
+        if(reaction.partial) await reaction.fetch()
+        if(user.bot) return
+        if(!reaction.message.guild) return
+        if(reaction.message.channel.id === channel){
+            //valorant
+            if(reaction.emoji.name === valorantEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(valorant)
+            }
+            //overwatch
+            if(reaction.emoji.name == overwatchEmoji){
+                reaction.message.guild.members.cache.get(user.id)?.roles.add(overwatch)
+            }
+            //minecraft
+            if(reaction.emoji.name == minecraftEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(minecraft)
+            }
+        }
+        else{
+            return
+        }
+    })
+
+    //get reactions for removing role
+    client.on('messageReactionRemove', async (reaction, user) => {
+        if(reaction.message.partial) await reaction.message.fetch()
+        if(reaction.partial) await reaction.fetch()
+        if(user.bot) return
+        if(!reaction.message.guild) return
+        if(reaction.message.channel.id === channel){
+            //valorant
+            if(reaction.emoji.name === valorantEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(valorant)
+            }
+            //overwatch
+            if(reaction.emoji.name == overwatchEmoji){
+                reaction.message.guild.members.cache.get(user.id)?.roles.remove(overwatch)
+            }
+            //minecraft
+            if(reaction.emoji.name == minecraftEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(minecraft)
+            }
+        }
+        else{
+            return
+        }
+    })
+
+ 
 
 }
 
