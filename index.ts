@@ -1,4 +1,4 @@
-import DiscordJS, { Intents, Message, SystemChannelFlags, VoiceChannel } from 'discord.js'
+import DiscordJS, { Intents, Message, MessageEmbed, SystemChannelFlags, User, VoiceChannel } from 'discord.js'
 import { ExplicitContentFilterLevels, MembershipStates } from 'discord.js/typings/enums';
 import DisTube, { DisTubeVoice, Options, Queue, Song } from 'distube';
 import dotenv from 'dotenv'
@@ -23,15 +23,20 @@ const client = new DiscordJS.Client({
     intents: [
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES,
-        Intents.FLAGS.GUILD_VOICE_STATES
+        Intents.FLAGS.GUILD_VOICE_STATES,
+        Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+        Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS
+    ],
+    partials: [
+        "MESSAGE",
+        "CHANNEL",
+        "REACTION"
     ]
 })
 //const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false})
 const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false, plugins: [new YtDlpPlugin(), new SpotifyPlugin()] })
 const guildID = '943285541561041017'
 const guild = client.guilds.cache.get(guildID)
-distube.options.youtubeDL = false
-distube.options.leaveOnFinish = true
 
 
 
@@ -166,11 +171,15 @@ client.on('messageCreate', (message) => {
             if(split[0] == '!poll'){
                 makePoll(message)
             }
+            
+            if(split[0] == '!rolesetup'){
+                setupRoles(message)
+            }
 
         }
     
         else{
-            if(message.content.toLowerCase().includes('wah')){
+            if(message.content.toLowerCase().includes('wah') && message.guild != null && message.guild.id == '943285541561041017'){
                 wahcounter = wahcounter + 1
                 //message.reply({
                 //    content:  message.author + ' said wah! wah counter:' + wahcounter
@@ -228,6 +237,109 @@ async function play(message: any, music: any){
         message.channel.send(message.author.toString() + ' no song found, try again!')
         //distube.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
     }
+
+}
+
+async function setupRoles(message: any){
+    
+    const channel = '1007446768662892555';
+    const sheher = message.guild.roles.cache.find((role: { name: string; }) => role.name == "She/Her")
+    const shethey = message.guild.roles.cache.find((role: { name: string; }) => role.name == "She/They")
+    const hehim = message.guild.roles.cache.find((role: { name: string; }) => role.name == "He/Him")
+    const hethey = message.guild.roles.cache.find((role: { name: string; }) => role.name == "He/They")
+    const theythem = message.guild.roles.cache.find((role: { name: string; }) => role.name == "They/Them")
+
+    //emoji :D
+    const sheherEmoji = '❤️'
+    const shetheyEmoji = '💜'
+    const hehimEmoji = '🖤'
+    const hetheyEmoji = '💙'
+    const theythemEmoji = '🤍'
+
+    //embeds
+    let embedRoleBoard = new Discord.MessageEmbed()
+    .setTitle('Select Your Pronouns :D')
+    .setDescription('\n'
+        + `${sheherEmoji} for She/Her\n`
+        + `${shetheyEmoji} for She/They\n`
+        + `${hehimEmoji} for He/Him\n`
+        + `${hetheyEmoji} for He/They\n`
+        + `${theythemEmoji} for They/Them\n`)
+    .setColor('LUMINOUS_VIVID_PINK')
+
+    let msgEmbed = await message.channel.send({ embeds: [embedRoleBoard] })
+    msgEmbed.react(sheherEmoji)
+    msgEmbed.react(shetheyEmoji)
+    msgEmbed.react(hehimEmoji)
+    msgEmbed.react(hetheyEmoji)
+    msgEmbed.react(theythemEmoji)
+
+
+    //get reactions for adding role
+    client.on('messageReactionAdd', async (reaction, user) => {
+        if(reaction.message.partial) await reaction.message.fetch()
+        if(reaction.partial) await reaction.fetch()
+        if(user.bot) return
+        if(!reaction.message.guild) return
+        if(reaction.message.channel.id === channel){
+            //she her
+            if(reaction.emoji.name === sheherEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(sheher)
+            }
+            //she they
+            if(reaction.emoji.name == shetheyEmoji){
+                reaction.message.guild.members.cache.get(user.id)?.roles.add(shethey)
+            }
+            //he him
+            if(reaction.emoji.name == hehimEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(hehim)
+            }
+            //he they
+            if(reaction.emoji.name == hetheyEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(hethey)
+            }
+            //they them
+            if(reaction.emoji.name == theythemEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(theythem)
+            }
+        }
+        else{
+            return
+        }
+    })
+
+    //remove role
+    client.on('messageReactionRemove', async (reaction, user) => {
+        if(reaction.message.partial) await reaction.message.fetch()
+        if(reaction.partial) await reaction.fetch()
+        if(user.bot) return
+        if(!reaction.message.guild) return
+        if(reaction.message.channel.id === channel){
+            //she her
+            if(reaction.emoji.name === sheherEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(sheher)
+            }
+            //she they
+            if(reaction.emoji.name == shetheyEmoji){
+                reaction.message.guild.members.cache.get(user.id)?.roles.remove(shethey)
+            }
+            //he him
+            if(reaction.emoji.name == hehimEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(hehim)
+            }
+            //he they
+            if(reaction.emoji.name == hetheyEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(hethey)
+            }
+            //they them
+            if(reaction.emoji.name == theythemEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(theythem)
+            }
+        }
+        else{
+            return
+        }
+    })
 
 }
 
