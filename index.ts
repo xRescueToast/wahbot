@@ -242,7 +242,7 @@ async function play(message: any, music: any){
 
 async function setupRoles(message: any){
     
-    const channel = '1007446768662892555';
+    const channel = '1007474646901330030';
     const sheher = message.guild.roles.cache.find((role: { name: string; }) => role.name == "She/Her")
     const shethey = message.guild.roles.cache.find((role: { name: string; }) => role.name == "She/They")
     const hehim = message.guild.roles.cache.find((role: { name: string; }) => role.name == "He/Him")
