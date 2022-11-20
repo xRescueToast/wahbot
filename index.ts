@@ -1,4 +1,4 @@
-import DiscordJS, { Intents, Message, MessageEmbed, SystemChannelFlags, User, VoiceChannel } from 'discord.js'
+import DiscordJS, { Intents, Message, MessageEmbed, PermissionOverwriteManager, SystemChannelFlags, User, VoiceChannel } from 'discord.js'
 import { ExplicitContentFilterLevels, MembershipStates } from 'discord.js/typings/enums';
 import DisTube, { DisTubeVoice, Options, Queue, Song } from 'distube';
 import dotenv from 'dotenv'
@@ -10,6 +10,7 @@ dotenv.config()
 const fs = require('fs')
 var wahcounter = 0
 const Discord = require('discord.js')
+var gamesembed = 0
 
 fs.readFile('counter.txt', 'utf8' , (err: any, data: String) => {
     if (err) {
@@ -19,13 +20,24 @@ fs.readFile('counter.txt', 'utf8' , (err: any, data: String) => {
     wahcounter = Number(data)
   })
 
+fs.readFile('gamesID.txt', 'utf8', (err: any, data: String) =>{
+    if(err){
+        console.error(err)
+        return
+    }
+    gamesembed = Number(data)
+})
+
+
+
 const client = new DiscordJS.Client({
     intents: [
         Intents.FLAGS.GUILDS,
         Intents.FLAGS.GUILD_MESSAGES,
         Intents.FLAGS.GUILD_VOICE_STATES,
         Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-        Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS
+        Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
+        Intents.FLAGS.DIRECT_MESSAGES
     ],
     partials: [
         "MESSAGE",
@@ -37,6 +49,9 @@ const client = new DiscordJS.Client({
 const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false, plugins: [new YtDlpPlugin(), new SpotifyPlugin()] })
 const guildID = '943285541561041017'
 const guild = client.guilds.cache.get(guildID)
+if(guild){
+    applyMessageReactHook(gamesembed, guildID)
+}
 
 
 
@@ -53,10 +68,14 @@ client.on('ready', () => {
 
     if(guild){
         commands = guild.commands
+        applyMessageReactHook(gamesembed, guildID)
     }
+
     else{
         commands = client.application?.commands
     }
+
+    
 
 
     commands?.create({
@@ -78,6 +97,7 @@ client.on('ready', () => {
         ]
     })
 })
+
 
 client.on('interactionCreate', async (interaction) => {
     if(!interaction.isCommand()){
@@ -278,6 +298,11 @@ async function setupRolesPronoun(message: any){
     msgEmbed.react(hetheyEmoji)
     msgEmbed.react(theythemEmoji)
 
+    fs.writeFile('pronounID.txt', String(msgEmbed.id), (err: any) => {
+        // In case of a error throw err.
+        if (err) throw err;
+    })
+
 
     //get reactions for adding role
     client.on('messageReactionAdd', async (reaction, user) => {
@@ -285,6 +310,7 @@ async function setupRolesPronoun(message: any){
         if(reaction.partial) await reaction.fetch()
         if(user.bot) return
         if(!reaction.message.guild) return
+        if (!reaction.message.id != msgEmbed.id) return
         if(reaction.message.channel.id === channel){
             //she her
             if(reaction.emoji.name === sheherEmoji){
@@ -318,6 +344,7 @@ async function setupRolesPronoun(message: any){
         if(reaction.partial) await reaction.fetch()
         if(user.bot) return
         if(!reaction.message.guild) return
+        if (!reaction.message.id != msgEmbed.id) return
         if(reaction.message.channel.id === channel){
             //she her
             if(reaction.emoji.name === sheherEmoji){
@@ -350,7 +377,7 @@ async function setupRolesPronoun(message: any){
 
 async function setupRolesGame(message: any){
     
-    const channel = '1007474646901330030';
+    const channel = '963191490992033852';
     const valorant = message.guild.roles.cache.find((role: { name: string; }) => role.name == "valorant")
     const overwatch = message.guild.roles.cache.find((role: { name: string; }) => role.name == "overwatch")
     const minecraft = message.guild.roles.cache.find((role: { name: string; }) => role.name == "minecraft")
@@ -374,6 +401,15 @@ async function setupRolesGame(message: any){
     msgEmbed.react(overwatchEmoji)
     msgEmbed.react(minecraftEmoji)
 
+    fs.writeFile('gamesID.txt', String(msgEmbed.id), (err: any) => {
+        // In case of a error throw err.
+        if (err) throw err;
+    })
+    console.log()
+
+    gamesembed = msgEmbed.id
+    console.log('message created with id: ' + gamesembed)
+
 
     //get reactions for adding role
     client.on('messageReactionAdd', async (reaction, user) => {
@@ -381,6 +417,7 @@ async function setupRolesGame(message: any){
         if(reaction.partial) await reaction.fetch()
         if(user.bot) return
         if(!reaction.message.guild) return
+        if (reaction.message.id != msgEmbed.id) return
         if(reaction.message.channel.id === channel){
             //valorant
             if(reaction.emoji.name === valorantEmoji){
@@ -406,6 +443,7 @@ async function setupRolesGame(message: any){
         if(reaction.partial) await reaction.fetch()
         if(user.bot) return
         if(!reaction.message.guild) return
+        if (reaction.message.id != msgEmbed.id) return
         if(reaction.message.channel.id === channel){
             //valorant
             if(reaction.emoji.name === valorantEmoji){
@@ -435,6 +473,7 @@ async function imgGet(message: any, tag: any){
                 + '*IMAGE:*\n'
                 + '`kitsune, '
                 + 'neko, '
+                + 'husbando, '
                 + 'waifu.`\n'
                 + '*GIF:*\n'
                 + '`baka, '
@@ -464,7 +503,8 @@ async function imgGet(message: any, tag: any){
                 + 'thumbsup, '
                 + 'tickle, '
                 + 'wave, '
-                + 'wink.`'
+                + 'wink, '
+                + 'yeet.`'
             )
     }
     else{
@@ -747,6 +787,73 @@ distube
     .on('searchDone', () => {})
 
 
+//startup functions
+async function applyMessageReactHook(persistedEmbeddedMessageID: any, guild: any) {
+    //get reactions for adding role
+    const channel = '963191490992033852';
+    const valorantEmoji = '🔴'
+    const overwatchEmoji = '🟠'
+    const minecraftEmoji = '🟢'
+
+    const valorant = guild.roles.cache.find((role: { name: string; }) => role.name == "valorant")
+    const overwatch = guild.roles.cache.find((role: { name: string; }) => role.name == "overwatch")
+    const minecraft = guild.roles.cache.find((role: { name: string; }) => role.name == "minecraft")
+
+    console.log('message created with id: ' + gamesembed)
+    
+    
+
+    client.on('messageReactionAdd', async (reaction, user) => {
+        if(reaction.message.partial) await reaction.message.fetch()
+        if(reaction.partial) await reaction.fetch()
+        if(user.bot) return
+        if(!reaction.message.guild) return
+        if(reaction.message.id != persistedEmbeddedMessageID) return
+        if(reaction.message.channel.id === channel){
+            //valorant
+            if(reaction.emoji.name === valorantEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(valorant)
+            }
+            //overwatch
+            if(reaction.emoji.name == overwatchEmoji){
+                reaction.message.guild.members.cache.get(user.id)?.roles.add(overwatch)
+            }
+            //minecraft
+            if(reaction.emoji.name == minecraftEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.add(minecraft)
+            }
+        }
+        else{
+            return
+        }
+    })
+
+    //get reactions for removing role
+    client.on('messageReactionRemove', async (reaction, user) => {
+        if(reaction.message.partial) await reaction.message.fetch()
+        if(reaction.partial) await reaction.fetch()
+        if(user.bot) return
+        if(!reaction.message.guild) return
+        if (reaction.message.id != persistedEmbeddedMessageID) return
+        if(reaction.message.channel.id === channel){
+            //valorant
+            if(reaction.emoji.name === valorantEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(valorant)
+            }
+            //overwatch
+            if(reaction.emoji.name == overwatchEmoji){
+                reaction.message.guild.members.cache.get(user.id)?.roles.remove(overwatch)
+            }
+            //minecraft
+            if(reaction.emoji.name == minecraftEmoji){
+                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(minecraft)
+            }
+        }
+        else{
+            return
+        }
+    })
+}
 
 
 client.login(process.env.TOKEN)
