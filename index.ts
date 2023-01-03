@@ -47,11 +47,7 @@ const client = new DiscordJS.Client({
 })
 //const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false})
 const distube = new DisTube(client, {searchSongs: 5, emitNewSongOnly: true, youtubeDL: false, plugins: [new YtDlpPlugin(), new SpotifyPlugin()] })
-const guildID = '943285541561041017'
-const guild = client.guilds.cache.get(guildID)
-if(guild){
-    applyMessageReactHook(gamesembed, guildID)
-}
+
 
 
 
@@ -68,7 +64,6 @@ client.on('ready', () => {
 
     if(guild){
         commands = guild.commands
-        applyMessageReactHook(gamesembed, guildID)
     }
 
     else{
@@ -118,8 +113,13 @@ client.on('interactionCreate', async (interaction) => {
 
 client.on('messageCreate', (message) => {
     if(message.channel.type == "DM"){
-        message.reply("you smell bad :D")
+        if(message.author.bot){
+            return
+        }
+        else{
+            message.reply("you cute :heart:")
         return
+        }
     }
     if(message.author.bot){
         return
@@ -176,7 +176,8 @@ client.on('messageCreate', (message) => {
             }
 
             if(split[0] === '!foob'){
-                foob(message)
+                //foob(message)
+                message.channel.send(message.author.toString() + " the api is currently down :(")
             }
 
             if(split[0] === '!img'){
@@ -216,7 +217,8 @@ client.on('messageCreate', (message) => {
                 })
             }
             if(message.content.toLowerCase().includes('bunger')){
-                bunger(message)
+                //bunger(message)
+                message.channel.send(message.author.toString() + " the api is currently down :(")
             }
         }
 
@@ -240,29 +242,9 @@ async function makePoll(message: any){
     await msgEmbed.react('👎')
 }
 
-async function play(message: any, music: any){
-    try{
-        inVoiceChannel: true
-        var found = await distube.search(music);
-        var length = found.length
-        console.log(length)
-        if(message.member && message.member.voice.channel){
-            distube.play(message.member.voice?.channel, music, {
-                member: message.member,
-                textChannel: message.channel,
-                message
-            });
-        }
-        else{
-            message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
-        }
-    }
-    catch(err){
-        message.channel.send(message.author.toString() + ' no song found, try again!')
-        //distube.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
-    }
 
-}
+
+
 
 async function setupRolesPronoun(message: any){
     
@@ -574,6 +556,8 @@ async function filter(message: any, filter: any){
     }
 }
 
+//API is currently down, prevent crashes
+/*
 async function foob(message: any){
     if(message.member && message.member.id.toString() == '264583320275386369'){
         message.channel.send(message.author.toString() + ' since kywa is so cute this meal is on the house! :heart:')
@@ -598,7 +582,31 @@ async function bunger(message: any){
                 //console.log(image)
                 message.channel.send(image)
 }
-   
+*/
+
+async function play(message: any, music: any){
+    try{
+        inVoiceChannel: true
+        var found = await distube.search(music);
+        var length = found.length
+        console.log(length)
+        if(message.member && message.member.voice.channel){
+            distube.play(message.member.voice?.channel, music, {
+                member: message.member,
+                textChannel: message.channel,
+                message
+            });
+        }
+        else{
+            message.channel.send(message.author.toString() + ' you need to be in a voice channel to use this command >:(')
+        }
+    }
+    catch(err){
+        message.channel.send(message.author.toString() + ' no song found, try again!')
+        //distube.on("searchNoResult", (message, query) => message.channel.send(`No result found for ${query}!`))
+    }
+}
+
 async function stop(message: any){
     if(message.member && message.member.voice.channel){
         if(distube.getQueue(message) != undefined){
@@ -788,72 +796,6 @@ distube
 
 
 //startup functions
-async function applyMessageReactHook(persistedEmbeddedMessageID: any, guild: any) {
-    //get reactions for adding role
-    const channel = '963191490992033852';
-    const valorantEmoji = '🔴'
-    const overwatchEmoji = '🟠'
-    const minecraftEmoji = '🟢'
-
-    const valorant = guild.roles.cache.find((role: { name: string; }) => role.name == "valorant")
-    const overwatch = guild.roles.cache.find((role: { name: string; }) => role.name == "overwatch")
-    const minecraft = guild.roles.cache.find((role: { name: string; }) => role.name == "minecraft")
-
-    console.log('message created with id: ' + gamesembed)
-    
-    
-
-    client.on('messageReactionAdd', async (reaction, user) => {
-        if(reaction.message.partial) await reaction.message.fetch()
-        if(reaction.partial) await reaction.fetch()
-        if(user.bot) return
-        if(!reaction.message.guild) return
-        if(reaction.message.id != persistedEmbeddedMessageID) return
-        if(reaction.message.channel.id === channel){
-            //valorant
-            if(reaction.emoji.name === valorantEmoji){
-                await reaction.message.guild.members.cache.get(user.id)?.roles.add(valorant)
-            }
-            //overwatch
-            if(reaction.emoji.name == overwatchEmoji){
-                reaction.message.guild.members.cache.get(user.id)?.roles.add(overwatch)
-            }
-            //minecraft
-            if(reaction.emoji.name == minecraftEmoji){
-                await reaction.message.guild.members.cache.get(user.id)?.roles.add(minecraft)
-            }
-        }
-        else{
-            return
-        }
-    })
-
-    //get reactions for removing role
-    client.on('messageReactionRemove', async (reaction, user) => {
-        if(reaction.message.partial) await reaction.message.fetch()
-        if(reaction.partial) await reaction.fetch()
-        if(user.bot) return
-        if(!reaction.message.guild) return
-        if (reaction.message.id != persistedEmbeddedMessageID) return
-        if(reaction.message.channel.id === channel){
-            //valorant
-            if(reaction.emoji.name === valorantEmoji){
-                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(valorant)
-            }
-            //overwatch
-            if(reaction.emoji.name == overwatchEmoji){
-                reaction.message.guild.members.cache.get(user.id)?.roles.remove(overwatch)
-            }
-            //minecraft
-            if(reaction.emoji.name == minecraftEmoji){
-                await reaction.message.guild.members.cache.get(user.id)?.roles.remove(minecraft)
-            }
-        }
-        else{
-            return
-        }
-    })
-}
 
 
 client.login(process.env.TOKEN)
