@@ -1,7 +1,9 @@
-import DiscordJS, { Intents, Message, MessageEmbed, PermissionOverwriteManager, SystemChannelFlags, User, VoiceChannel } from 'discord.js'
+import { Axios, default as axios } from 'axios'
+import DiscordJS, { Channel, CommandInteractionOptionResolver, Intents, Message, MessageEmbed, PermissionOverwriteManager, SystemChannelFlags, TextChannel, User, VoiceChannel } from 'discord.js'
 import { ExplicitContentFilterLevels, MembershipStates } from 'discord.js/typings/enums';
-import DisTube, { DisTubeVoice, Options, Queue, Song } from 'distube';
+import DisTube, { DisTubeVoice, HTTPSPlugin, Options, Queue, Song } from 'distube';
 import dotenv from 'dotenv'
+import { request } from 'http';
 import fetch from 'node-fetch';
 import { isElementAccessExpression } from 'typescript';
 const { YtDlpPlugin } = require("@distube/yt-dlp")
@@ -11,6 +13,9 @@ const fs = require('fs')
 var wahcounter = 0
 const Discord = require('discord.js')
 var gamesembed = 0
+const Path = require('path') 
+const sharp = require('sharp')
+const https = require('https')
 
 fs.readFile('counter.txt', 'utf8' , (err: any, data: String) => {
     if (err) {
@@ -37,7 +42,8 @@ const client = new DiscordJS.Client({
         Intents.FLAGS.GUILD_VOICE_STATES,
         Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
         Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS,
-        Intents.FLAGS.DIRECT_MESSAGES
+        Intents.FLAGS.DIRECT_MESSAGES,
+        Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS
     ],
     partials: [
         "MESSAGE",
@@ -198,6 +204,9 @@ client.on('messageCreate', (message) => {
             }
             if(split[0] == '!rolesetupgames'){
                 setupRolesGame(message)
+            }
+            if(split[0] == '!addemoji'){
+                addEmoji(message);
             }
 
 
@@ -718,6 +727,103 @@ async function queue(message: any){
         message.channel.send(message.author.toString() + ' there is no queue!')
     }
 }
+
+
+async function addEmoji(msg: any){
+    //emoji suggestion channel
+    const channel = client.channels.cache.get("1066897231657046066");
+    try {
+        let https = require('node:https');
+        (channel as TextChannel).messages.fetch({ limit: 100 }).then(messages => {
+            console.log(`Received ${messages.size} messages`);
+            //Iterate through the messages here with the variable "messages".
+            let x = 0
+            messages.forEach(message =>  {
+                console.log("########################################################################## MESSAGE: " + x)
+                //let attatchmentInfo = https.get(message.attachments.first()?.url)
+                let attachmentInfo = message.attachments.first()?.url
+                //console.log(https.get(message.attachments.first()?.url ?? "")) //.pipe(fs.createWriteStream('image.png'));
+                console.log("URL: " + attachmentInfo)
+
+                //message.channel.send("https://" + attatchmentInfo.host + attatchmentInfo.path)
+                if(message.author.bot){
+                    console.log("instructional message, no emote here")
+                    x = x - 1
+                }
+                else if(attachmentInfo != undefined){
+                    addEmote(attachmentInfo, x, msg)
+                    console.log("success")
+                }
+                else if(message.content.toLowerCase().includes("cdn.discordapp.com/attachments/")){
+                    addEmote(message.content, x, msg)
+                    console.log("success")
+                }
+                    
+                
+                console.log("MESSAGE CONTENT: " + message.content)
+                x++
+            })
+          })
+
+    } catch (err) {
+        console.error('https support is disabled!');
+    }
+    
+}
+async function downloadImage(url: any, number: any) {
+    const filepath = Path.resolve(__dirname, 'emotes', 'emote' + number + '.jpg')
+    const writer = fs.createWriteStream(filepath)
+    
+    const response = await axios({
+        url,
+        method: 'GET',
+        responseType: 'stream'
+    });
+
+    response.data.pipe(writer)
+
+    return new Promise((resolve, reject) => {
+        writer.on('finish', resolve)
+        writer.on('error', reject)
+    });
+}
+
+
+async function addEmote(url: any, x: any, message: any){
+    let guildID = '943285541561041017'
+    let guild = client.guilds.cache.get(guildID)
+    if(guild){
+        //var base64Image = base64_encode('/home/carrick/wahbot/emotes/emote4.jpg')
+
+        guild.emojis.create(url, 'emote' + x).catch((error) => {
+            client.users.send(message.author, "The following image was unable to be uploaded as an emote:")
+            client.users.send(message.author, url)
+        });
+        //then(emoji => console.log(`Created new emoji with name ${emoji.name}!`))
+        
+
+        message.channel.bulkDelete(100)
+        message.channel.send("Submit PNGs or GIFs to be made into emotes for the server. Please make sure they are of adequate quality " +
+        "to avoid blurriness. In addition, try and choose emotes that you think can be used to address a certain situation as a reaction " +
+        "to something, because multiple generic emotes will often end up never being used and will waste a precious slot. This doesn't mean " +
+        "pick very niche emotes either as tho   se will likely never see use either\n" +
+        "\n" +
+        "You can also submit stickers as well.\n" +
+        "\n" +
+        "I'll delete the images after they are added or not to keep this channel clean. Thank you\n")
+        message.channel.send({ files: [{ attachment: 'instructions.png' }], });
+    }
+
+}
+
+// function to encode file data to base64 encoded string
+function printImgError(file: any) {
+    // read binary data
+    var bitmap = fs.readFileSync(file);
+    // convert binary data to base64 encoded string
+    return new Buffer(bitmap).toString('base64');
+}
+
 
 
 //distube.on("searchResult", (message, result) => printresult(message, result))
