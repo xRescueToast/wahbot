@@ -763,6 +763,17 @@ async function addEmoji(msg: any){
                 console.log("MESSAGE CONTENT: " + message.content)
                 x++
             })
+
+            msg.channel.bulkDelete(100)
+            msg.channel.send("Submit PNGs or GIFs to be made into emotes for the server. Please make sure they are of adequate quality " +
+            "to avoid blurriness. In addition, try and choose emotes that you think can be used to address a certain situation as a reaction " +
+            "to something, because multiple generic emotes will often end up never being used and will waste a precious slot. This doesn't mean " +
+            "pick very niche emotes either as tho   se will likely never see use either\n" +
+            "\n" +
+            "You can also submit stickers as well.\n" +
+            "\n" +
+            "I'll delete the images after they are added or not to keep this channel clean. Thank you\n")
+            msg.channel.send({ files: [{ attachment: 'instructions.png' }], });
           })
 
     } catch (err) {
@@ -800,18 +811,6 @@ async function addEmote(url: any, x: any, message: any){
             client.users.send(message.author, url)
         });
         //then(emoji => console.log(`Created new emoji with name ${emoji.name}!`))
-        
-
-        message.channel.bulkDelete(100)
-        message.channel.send("Submit PNGs or GIFs to be made into emotes for the server. Please make sure they are of adequate quality " +
-        "to avoid blurriness. In addition, try and choose emotes that you think can be used to address a certain situation as a reaction " +
-        "to something, because multiple generic emotes will often end up never being used and will waste a precious slot. This doesn't mean " +
-        "pick very niche emotes either as tho   se will likely never see use either\n" +
-        "\n" +
-        "You can also submit stickers as well.\n" +
-        "\n" +
-        "I'll delete the images after they are added or not to keep this channel clean. Thank you\n")
-        message.channel.send({ files: [{ attachment: 'instructions.png' }], });
     }
 
 }
