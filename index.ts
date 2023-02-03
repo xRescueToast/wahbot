@@ -206,7 +206,9 @@ client.on('messageCreate', (message) => {
                 setupRolesGame(message)
             }
             if(split[0] == '!addemoji'){
-                addEmoji(message);
+                if(message.member && message.member.roles.cache.some(role => role.name === 'wah')){
+                    addEmoji(message);    
+                }
             }
 
 
